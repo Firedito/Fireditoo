@@ -2,163 +2,186 @@ import os
 import pickle
 import streamlit as st
 from streamlit_option_menu import option_menu
+import plotly.express as px
+import pandas as pd
 
-# Set page configuration
-st.set_page_config(page_title="Health Assistant",
+# Konfigurasi halaman
+st.set_page_config(page_title="Asisten Kesehatan Firedito",
                    layout="wide",
                    page_icon="🧑‍⚕️")
 
-    
-# getting the working directory of the main.py
+# Mendapatkan direktori kerja dari main.py
 working_dir = os.path.dirname(os.path.abspath(__file__))
 
-# loading the saved models
+# Memuat model yang telah disimpan
+diabetes_model = pickle.load(open(f'{working_dir}/saved_models/diabetes_model.pkl', 'rb'))
 
-diabetes_model = pickle.load(open(f'{working_dir}/saved_models/diabetes_model.sav', 'rb'))
+heart_disease_model = pickle.load(open(f'{working_dir}/saved_models/heart_disease_model.pkl', 'rb'))
 
-heart_disease_model = pickle.load(open(f'{working_dir}/saved_models/heart_disease_model.sav', 'rb'))
+parkinsons_model = pickle.load(open(f'{working_dir}/saved_models/parkinsons_model.pkl', 'rb'))
 
-parkinsons_model = pickle.load(open(f'{working_dir}/saved_models/parkinsons_model.sav', 'rb'))
-
-# sidebar for navigation
+# Sidebar untuk navigasi
 with st.sidebar:
-    selected = option_menu('Multiple Disease Prediction System',
+    selected = option_menu('Sistem Prediksi Multi Penyakit',
 
-                           ['Diabetes Prediction',
-                            'Heart Disease Prediction',
-                            'Parkinsons Prediction'],
+                           ['Prediksi Diabetes',
+                            'Prediksi Penyakit Jantung',
+                            'Prediksi Parkinson'],
                            menu_icon='hospital-fill',
                            icons=['activity', 'heart', 'person'],
                            default_index=0)
 
+# Halaman Prediksi Diabetes
+if selected == 'Prediksi Diabetes':
 
-# Diabetes Prediction Page
-if selected == 'Diabetes Prediction':
+    st.title('Prediksi Diabetes menggunakan ML')
 
-    # page title
-    st.title('Diabetes Prediction using ML')
-
-    # getting the input data from the user
+    # Input data pengguna
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        Pregnancies = st.text_input('Number of Pregnancies')
-
+        Pregnancies = st.text_input('Jumlah Kehamilan', value='0')
     with col2:
-        Glucose = st.text_input('Glucose Level')
-
+        Glucose = st.text_input('Tingkat Glukosa', value='0')
     with col3:
-        BloodPressure = st.text_input('Blood Pressure value')
-
+        BloodPressure = st.text_input('Nilai Tekanan Darah', value='0')
     with col1:
-        SkinThickness = st.text_input('Skin Thickness value')
-
+        SkinThickness = st.text_input('Nilai Ketebalan Kulit', value='0')
     with col2:
-        Insulin = st.text_input('Insulin Level')
-
+        Insulin = st.text_input('Tingkat Insulin', value='0')
     with col3:
-        BMI = st.text_input('BMI value')
-
+        BMI = st.text_input('Nilai BMI', value='0')
     with col1:
-        DiabetesPedigreeFunction = st.text_input('Diabetes Pedigree Function value')
-
+        DiabetesPedigreeFunction = st.text_input('Nilai Fungsi Diabetes Pedigree', value='0')
     with col2:
-        Age = st.text_input('Age of the Person')
+        Age = st.text_input('Usia Orang', value='0')
 
+    # Default nilai untuk user_input
+    user_input = [float(Pregnancies), float(Glucose), float(BloodPressure), float(SkinThickness),
+                  float(Insulin), float(BMI), float(DiabetesPedigreeFunction), float(Age)]
 
-    # code for Prediction
     diab_diagnosis = ''
 
-    # creating a button for Prediction
-
-    if st.button('Diabetes Test Result'):
-
-        user_input = [Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
-                      BMI, DiabetesPedigreeFunction, Age]
-
-        user_input = [float(x) for x in user_input]
-
+    # Tombol untuk melakukan prediksi
+    if st.button('Hasil Tes Diabetes'):
         diab_prediction = diabetes_model.predict([user_input])
-
         if diab_prediction[0] == 1:
-            diab_diagnosis = 'The person is diabetic'
+            diab_diagnosis = 'Orang tersebut mengidap diabetes'
         else:
-            diab_diagnosis = 'The person is not diabetic'
+            diab_diagnosis = 'Orang tersebut tidak mengidap diabetes'
+        st.success(diab_diagnosis)
 
-    st.success(diab_diagnosis)
+    # Grafik interaktif
+    if st.button("Tampilkan Grafik Diabetes"):
+        df = pd.DataFrame({'Fitur': ['Kehamilan', 'Glukosa', 'Tekanan Darah', 'Ketebalan Kulit', 'Insulin', 'BMI', 
+                                     'Fungsi Diabetes Pedigree', 'Usia'],
+                           'Nilai': user_input})
+        fig = px.bar(df, x='Fitur', y='Nilai', title="Visualisasi Data Input Diabetes",
+                     labels={'Nilai': 'Skor', 'Fitur': 'Kategori'})
+        st.plotly_chart(fig)
 
-# Heart Disease Prediction Page
-if selected == 'Heart Disease Prediction':
 
-    # page title
-    st.title('Heart Disease Prediction using ML')
+# Halaman Prediksi Penyakit Jantung
+if selected == 'Prediksi Penyakit Jantung':
+
+    # Judul halaman
+    st.title('Prediksi Penyakit Jantung menggunakan ML')
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        age = st.text_input('Age')
+        age = st.text_input('Usia')
 
     with col2:
-        sex = st.text_input('Sex')
+        sex = st.selectbox('Jenis Kelamin', 
+                           options=[0, 1], 
+                           format_func=lambda x: 'Perempuan' if x == 0 else 'Laki-laki')
 
     with col3:
-        cp = st.text_input('Chest Pain types')
+        cp = st.selectbox('Jenis Nyeri Dada', 
+                          options=[0, 1, 2, 3],
+                          format_func=lambda x: {
+                              0: 'Typical Angina',
+                              1: 'Atypical Angina',
+                              2: 'Non-Anginal Pain',
+                              3: 'Asymptomatic'
+                          }[x])
 
     with col1:
-        trestbps = st.text_input('Resting Blood Pressure')
+        trestbps = st.text_input('Tekanan Darah Istirahat')
 
     with col2:
-        chol = st.text_input('Serum Cholestoral in mg/dl')
+        chol = st.text_input('Kadar Kolesterol Serum dalam mg/dl')
 
     with col3:
-        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl')
+        fbs = st.text_input('Gula Darah Puasa > 120 mg/dl')
 
     with col1:
-        restecg = st.text_input('Resting Electrocardiographic results')
+        restecg = st.selectbox('Hasil Elektrokardiogram Istirahat',
+                               options=[0, 1, 2],
+                               format_func=lambda x: {
+                                   0: 'Normal',
+                                   1: 'Kelainan gelombang ST-T',
+                                   2: 'Kemungkinan atau pasti hipertrofi ventrikel kiri'
+                               }[x])
 
     with col2:
-        thalach = st.text_input('Maximum Heart Rate achieved')
+        thalach = st.text_input('Detak Jantung Maksimum yang Dicapai')
 
     with col3:
-        exang = st.text_input('Exercise Induced Angina')
+        exang = st.selectbox('Angina yang Diinduksi Olahraga', 
+                             options=[0, 1],
+                             format_func=lambda x: 'Ya' if x == 1 else 'Tidak')
 
     with col1:
-        oldpeak = st.text_input('ST depression induced by exercise')
+        oldpeak = st.text_input('Depresi ST yang Diinduksi Olahraga')
 
     with col2:
-        slope = st.text_input('Slope of the peak exercise ST segment')
+        slope = st.selectbox('Kemiringan Segmen ST Puncak Olahraga', 
+                             options=[0, 1, 2],
+                             format_func=lambda x: {
+                                 0: 'Menurun',
+                                 1: 'Datar',
+                                 2: 'Meningkat'
+                             }[x])
 
     with col3:
-        ca = st.text_input('Major vessels colored by flourosopy')
+        ca = st.text_input('Jumlah Pembuluh Utama yang Diwarnai dengan Fluoroskopi')
 
     with col1:
-        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
+        thal = st.selectbox('Hasil Tes Thalium', 
+                            options=[0, 1, 2],
+                            format_func=lambda x: {
+                                0: 'Normal',
+                                1: 'Cacat Tetap',
+                                2: 'Cacat Reversibel'
+                            }[x])
 
-    # code for Prediction
+    # Kode untuk Prediksi
     heart_diagnosis = ''
 
-    # creating a button for Prediction
-
-    if st.button('Heart Disease Test Result'):
+    # Membuat tombol untuk Prediksi
+    if st.button('Hasil Tes Penyakit Jantung'):
 
         user_input = [age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
 
-        user_input = [float(x) for x in user_input]
+        user_input = [float(x) if isinstance(x, str) else x for x in user_input]
 
         heart_prediction = heart_disease_model.predict([user_input])
 
         if heart_prediction[0] == 1:
-            heart_diagnosis = 'The person is having heart disease'
+            heart_diagnosis = 'Orang tersebut mengidap penyakit jantung'
         else:
-            heart_diagnosis = 'The person does not have any heart disease'
+            heart_diagnosis = 'Orang tersebut tidak mengidap penyakit jantung'
 
     st.success(heart_diagnosis)
 
-# Parkinson's Prediction Page
-if selected == "Parkinsons Prediction":
+    
 
-    # page title
-    st.title("Parkinson's Disease Prediction using ML")
+# Halaman Prediksi Parkinson
+if selected == 'Prediksi Parkinson':
+
+    # Judul halaman
+    st.title("Prediksi Penyakit Parkinson menggunakan ML")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -228,14 +251,14 @@ if selected == "Parkinsons Prediction":
     with col2:
         PPE = st.text_input('PPE')
 
-    # code for Prediction
+    # Kode untuk Prediksi
     parkinsons_diagnosis = ''
 
-    # creating a button for Prediction    
-    if st.button("Parkinson's Test Result"):
+    # Membuat tombol untuk Prediksi    
+    if st.button('Hasil Tes Parkinson'):
 
         user_input = [fo, fhi, flo, Jitter_percent, Jitter_Abs,
-                      RAP, PPQ, DDP,Shimmer, Shimmer_dB, APQ3, APQ5,
+                      RAP, PPQ, DDP, Shimmer, Shimmer_dB, APQ3, APQ5,
                       APQ, DDA, NHR, HNR, RPDE, DFA, spread1, spread2, D2, PPE]
 
         user_input = [float(x) for x in user_input]
@@ -243,8 +266,8 @@ if selected == "Parkinsons Prediction":
         parkinsons_prediction = parkinsons_model.predict([user_input])
 
         if parkinsons_prediction[0] == 1:
-            parkinsons_diagnosis = "The person has Parkinson's disease"
+            parkinsons_diagnosis = 'Orang tersebut mengidap penyakit Parkinson'
         else:
-            parkinsons_diagnosis = "The person does not have Parkinson's disease"
+            parkinsons_diagnosis = 'Orang tersebut tidak mengidap penyakit Parkinson'
 
     st.success(parkinsons_diagnosis)
