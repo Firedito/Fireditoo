@@ -22,7 +22,7 @@ parkinsons_model = pickle.load(open(f'{working_dir}/saved_models/parkinsons_mode
 
 # Sidebar untuk navigasi
 with st.sidebar:
-    selected = option_menu('Sistem Prediksi Multi Penyakit',
+    selected = option_menu('Sistem Prediksi Multi Penyakit - FIREDITO DARYL_22191110',
 
                            ['Prediksi Diabetes',
                             'Prediksi Penyakit Jantung',
